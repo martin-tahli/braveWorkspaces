@@ -1,0 +1,50 @@
+body {
+  margin: 0;
+  padding: 8px;
+  font-family: system-ui, sans-serif;
+  min-width: 260px;
+}
+
+.header {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+#newName {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+#addWs {
+  padding: 4px 8px;
+}
+
+.ws-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.ws-item.active {
+  outline: 2px solid #4a90e2;
+}
+
+.ws-name {
+  font-size: 13px;
+}
+
+.ws-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.ws-actions button {
+  font-size: 11px;
+  padding: 2px 4px;
+}
