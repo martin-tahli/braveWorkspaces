@@ -1,5 +1,4 @@
 import { getState, setState } from "./storage.js";
-// 20 premade colors
 const COLOR_PRESETS = [
     "#FF5252",
     "#FF7F50",
@@ -20,7 +19,8 @@ const COLOR_PRESETS = [
     "#FF9800",
     "#FFEE58",
     "#66BB6A",
-    "#42A5F5"
+    "#42A5F5",
+    "#FF9100"
 ];
 // ~50 emoji icons
 const ICON_PRESETS = [
@@ -76,38 +76,48 @@ const ICON_PRESETS = [
     "🎲"
 ];
 let wsNameInput;
-let colorPicker;
 let iconSelect;
 let colorPresetsContainer;
 let wsList;
 let submitBtn;
-// which workspace is currently being edited (null = create mode)
 let editingWorkspaceId = null;
+let selectedColor = COLOR_PRESETS[0];
 document.addEventListener("DOMContentLoaded", () => {
     wsNameInput = document.getElementById("wsName");
-    colorPicker = document.getElementById("colorPicker");
     iconSelect = document.getElementById("iconSelect");
     colorPresetsContainer = document.getElementById("colorPresets");
     wsList = document.getElementById("wsList");
     submitBtn = document.getElementById("addWs");
-    setupColorPicker();
+    setupColorPresets();
     setupIconSelect();
     setupSubmitButton();
     void renderWorkspaces();
 });
 // ---------- UI setup ----------
-function setupColorPicker() {
-    colorPicker.value = COLOR_PRESETS[0];
+function setupColorPresets() {
     colorPresetsContainer.innerHTML = "";
     COLOR_PRESETS.forEach((color) => {
         const swatch = document.createElement("div");
         swatch.className = "color-swatch";
         swatch.style.backgroundColor = color;
+        if (color === selectedColor) {
+            swatch.classList.add("selected");
+        }
         swatch.addEventListener("click", () => {
-            colorPicker.value = color;
+            selectedColor = color;
+            updateSelectedSwatch();
         });
         colorPresetsContainer.appendChild(swatch);
     });
+}
+function updateSelectedSwatch() {
+    const children = Array.from(colorPresetsContainer.querySelectorAll(".color-swatch"));
+    children.forEach((sw) => {
+        const bg = sw.style.backgroundColor;
+        sw.classList.remove("selected");
+    });
+    // simpler: re-render
+    setupColorPresets();
 }
 function setupIconSelect() {
     iconSelect.innerHTML = "";
@@ -128,8 +138,8 @@ function setFormModeEdit(workspace) {
     submitBtn.textContent = "Save";
     submitBtn.title = "Save changes to workspace";
     wsNameInput.value = workspace.name;
-    colorPicker.value = workspace.color;
-    // pick existing icon option if present, otherwise leave current
+    selectedColor = workspace.color;
+    setupColorPresets();
     const iconOption = Array.from(iconSelect.options).find((opt) => opt.value === workspace.icon);
     if (iconOption) {
         iconSelect.value = workspace.icon;
@@ -137,12 +147,12 @@ function setFormModeEdit(workspace) {
 }
 function resetForm() {
     wsNameInput.value = "";
-    colorPicker.value = COLOR_PRESETS[0];
+    selectedColor = COLOR_PRESETS[0];
     iconSelect.value = ICON_PRESETS[0];
     setFormModeCreate();
+    setupColorPresets();
 }
 function setupSubmitButton() {
-    // default: Create mode
     setFormModeCreate();
     submitBtn.addEventListener("click", () => {
         void onSubmitWorkspace();
@@ -191,7 +201,6 @@ async function ungroupWorkspaceTabs(workspaceId) {
         });
     });
 }
-// tell background to (re)create group for this workspace (for name/color sync)
 async function initWorkspaceGroup(workspaceId) {
     await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({
@@ -223,7 +232,7 @@ async function onAddWorkspace() {
     const name = wsNameInput.value.trim();
     if (!name)
         return;
-    const color = colorPicker.value || COLOR_PRESETS[0];
+    const color = selectedColor;
     const icon = iconSelect.value || ICON_PRESETS[0];
     const state = await getState();
     const workspace = {
@@ -233,11 +242,9 @@ async function onAddWorkspace() {
         icon
     };
     const workspaces = [...state.workspaces, workspace];
-    // Creating a workspace shouldn't change the active one or move tabs
     await setState({
         workspaces
     });
-    // Create underlying Chrome tab group so native "Add tab to group" sees it
     await initWorkspaceGroup(workspace.id);
     resetForm();
     await renderWorkspaces();
@@ -248,12 +255,11 @@ async function onSaveWorkspaceEdit() {
     const name = wsNameInput.value.trim();
     if (!name)
         return;
-    const color = colorPicker.value || COLOR_PRESETS[0];
+    const color = selectedColor;
     const icon = iconSelect.value || ICON_PRESETS[0];
     const state = await getState();
     const idx = state.workspaces.findIndex((w) => w.id === editingWorkspaceId);
     if (idx === -1) {
-        // workspace disappeared (deleted) -> reset to create
         resetForm();
         await renderWorkspaces();
         return;
@@ -270,7 +276,6 @@ async function onSaveWorkspaceEdit() {
     await setState({
         workspaces: updatedWorkspaces
     });
-    // Update underlying group title + color
     await initWorkspaceGroup(updated.id);
     resetForm();
     await renderWorkspaces();
@@ -323,7 +328,7 @@ async function renderWorkspaces() {
         editBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             setFormModeEdit(ws);
-            void renderWorkspaces(); // highlight editing row
+            void renderWorkspaces();
         });
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "✕";
@@ -336,7 +341,7 @@ async function renderWorkspaces() {
         actions.appendChild(deleteBtn);
         item.appendChild(left);
         item.appendChild(actions);
-        // clicking row = same as Use
+        // clicking the row = Use
         item.addEventListener("click", () => {
             void onUseWorkspace(ws.id);
         });
@@ -344,18 +349,14 @@ async function renderWorkspaces() {
     });
 }
 async function onUseWorkspace(workspaceId) {
-    // Choose workspace: become last-used + move current tab there
     await activateWorkspace(workspaceId, true);
     await renderWorkspaces();
 }
 async function onDeleteWorkspace(workspaceId) {
-    // If we were editing this workspace, reset the form
     if (editingWorkspaceId === workspaceId) {
         resetForm();
     }
-    // 1) Ungroup all tabs that belong to this workspace
     await ungroupWorkspaceTabs(workspaceId);
-    // 2) Then update state
     const state = await getState();
     const filtered = state.workspaces.filter((w) => w.id !== workspaceId);
     let nextActive = state.activeWorkspaceId;

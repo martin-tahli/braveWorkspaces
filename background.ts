@@ -53,13 +53,12 @@ function normalizeHex6(hex: string): string | null {
   return `#${r}${g}${b}`;
 }
 
-// explicit mapping for ALL popup presets
 const PRESET_GROUP_COLOR_MAP: Record<string, TabGroupColor> = {
   "#FF5252": "red",
-  "#FF7F50": "yellow", // coral → warm
-  "#FFA726": "yellow", // orange
+  "#FF7F50": "yellow",
+  "#FFA726": "yellow",
   "#FFEB3B": "yellow",
-  "#C6FF00": "green",  // lime-y, treat as green
+  "#C6FF00": "green",
   "#00E676": "green",
   "#1DE9B6": "cyan",
   "#00E5FF": "cyan",
@@ -67,15 +66,18 @@ const PRESET_GROUP_COLOR_MAP: Record<string, TabGroupColor> = {
   "#651FFF": "purple",
   "#D500F9": "purple",
   "#F06292": "pink",
-  "#8D6E63": "grey",   // brownish → grey-ish
+  "#8D6E63": "grey",
   "#BDBDBD": "grey",
-  "#607D8B": "blue",   // blue-grey
+  "#607D8B": "blue",
   "#F44336": "red",
   "#FF9800": "yellow",
   "#FFEE58": "yellow",
   "#66BB6A": "green",
-  "#42A5F5": "blue"
+  "#42A5F5": "blue",
+  // NEW
+  "#FF9100": "yellow"
 };
+
 
 function rgbToHsl(r: number, g: number, b: number): {
   h: number;
