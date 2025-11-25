@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Brave Workspaces",
-  "description": "Opera GX-like workspaces using tab groups in Brave.",
-  "version": "0.0.1",
+  "description": "Opera GX-like workspaces for Brave using tab groups.",
+  "version": "0.1.0",
   "action": {
     "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
   },
   "permissions": [
     "tabs",

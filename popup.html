@@ -1,19 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Workspaces</title>
+    <title>Brave Workspaces</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div id="app">
-      <div class="header">
-        <input id="newName" placeholder="New workspace name" />
-        <button id="addWs">+</button>
-      </div>
+    <div id="popup-root">
+      <header class="header">
+        <h1>Workspaces</h1>
+      </header>
 
-      <div id="wsList"></div>
+      <section class="form-section">
+        <div class="field">
+          <label for="wsName">Name</label>
+          <input
+            id="wsName"
+            type="text"
+            placeholder="e.g. Work, Gaming, YouTube"
+          />
+        </div>
+
+        <div class="field field-row">
+          <div class="field">
+            <label for="colorPicker">Color</label>
+            <input id="colorPicker" type="color" />
+          </div>
+
+          <div class="field">
+            <span class="label-inline">Presets</span>
+            <div id="colorPresets" class="color-presets"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="iconSelect">Icon</label>
+          <select id="iconSelect"></select>
+        </div>
+
+        <div class="actions-row">
+          <!-- main create / save button -->
+          <button id="addWs" class="primary-btn">Create</button>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="ws-list-section">
+        <h2 class="ws-list-title">Workspaces</h2>
+        <div id="wsList" class="ws-list"></div>
+      </section>
     </div>
-    <script src="popup.js"></script>
+
+    <!-- compiled from popup.ts -->
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

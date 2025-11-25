@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "ES2021",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "noEmitOnError": true,
+        "allowJs": false,
+        "outDir": "./",
+        "rootDir": "./",
+        "types": [
+            "chrome"
+        ],
+        "lib": [
+            "ES2021",
+            "DOM"
+        ]
+    },
+    "include": [
+        "*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
