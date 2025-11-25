@@ -1,6 +1,5 @@
 import { getState, setState } from "./storage.js";
 // ---------- color helpers ----------
-// same as before: parse #RGB / #RRGGBB
 function hexToRgb(hex) {
     const trimmed = hex.trim();
     const m = /^#?([0-9a-fA-F]{6})$/.exec(trimmed) ||
@@ -9,7 +8,6 @@ function hexToRgb(hex) {
         return null;
     let value = m[1];
     if (value.length === 3) {
-        // #abc -> #aabbcc
         value = value
             .split("")
             .map((c) => c + c)
@@ -21,7 +19,6 @@ function hexToRgb(hex) {
     const b = n & 0xff;
     return { r, g, b };
 }
-// normalize any hex to canonical "#RRGGBB" uppercase string
 function normalizeHex6(hex) {
     const rgb = hexToRgb(hex);
     if (!rgb)
@@ -52,7 +49,6 @@ const PRESET_GROUP_COLOR_MAP = {
     "#FFEE58": "yellow",
     "#66BB6A": "green",
     "#42A5F5": "blue",
-    // NEW
     "#FF9100": "yellow"
 };
 function rgbToHsl(r, g, b) {
@@ -83,31 +79,26 @@ function rgbToHsl(r, g, b) {
     return { h, s, l };
 }
 function mapHexToGroupColor(hex) {
-    // 1) exact mapping for our preset swatches
     const key = normalizeHex6(hex);
     if (key && PRESET_GROUP_COLOR_MAP[key]) {
         return PRESET_GROUP_COLOR_MAP[key];
     }
-    // 2) fallback for arbitrary colors from the wheel
     const rgb = hexToRgb(hex);
     if (!rgb)
         return "grey";
     const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    // low saturation -> grey
     if (s < 0.15) {
         return "grey";
     }
-    // very bright → yellow-ish
     if (l > 0.8) {
         return "yellow";
     }
-    // hue-based buckets
     if (h < 15 || h >= 345)
         return "red";
     if (h < 60)
         return "yellow";
     if (h < 150)
-        return "green"; // includes lime-y greens
+        return "green";
     if (h < 200)
         return "cyan";
     if (h < 255)
@@ -182,7 +173,6 @@ function createTab(opts) {
         });
     });
 }
-// ensure we pass valid types to chrome.tabs.ungroup
 function ungroupTabs(tabIds) {
     return new Promise((resolve) => {
         if (Array.isArray(tabIds)) {
@@ -209,7 +199,6 @@ async function getActiveWorkspace() {
         return null;
     return state.workspaces.find((w) => w.id === state.activeWorkspaceId) ?? null;
 }
-// Compute the tab group title we expect for a workspace
 function getWorkspaceGroupTitle(workspace) {
     return workspace.icon
         ? `${workspace.icon} ${workspace.name}`
@@ -222,12 +211,6 @@ async function getWorkspaceGroup(workspace, windowId) {
     const found = groups.find((g) => g.title === desiredTitle);
     return found ?? null;
 }
-/**
- * Ensure a tab group exists for this workspace in the given window.
- * If needed, it will group either:
- * - the active tab in that window, or
- * - a newly created blank tab (if somehow no active tab is found).
- */
 async function ensureWorkspaceGroup(workspace, windowId) {
     const groupColor = mapHexToGroupColor(workspace.color);
     const title = getWorkspaceGroupTitle(workspace);
@@ -239,10 +222,8 @@ async function ensureWorkspaceGroup(workspace, windowId) {
         });
         return updated;
     }
-    // 1) Try to use active tab in that window
     const tabs = await queryTabs({ active: true, windowId });
     let baseTabId = tabs[0]?.id;
-    // 2) Fallback: create a new tab in that window
     if (baseTabId == null) {
         const newTab = await createTab({ windowId, active: true });
         baseTabId = newTab.id;
@@ -289,8 +270,6 @@ async function handleActivateWorkspace(workspaceId, moveCurrentTab = true) {
     }
     await setState({ activeWorkspaceId: workspaceId });
 }
-// Create a real tab group for this workspace in the current window,
-// so it shows up in Chrome/Brave's native "Add tab to group" list.
 async function initWorkspaceGroup(workspaceId) {
     const workspace = await getWorkspaceById(workspaceId);
     if (!workspace)
@@ -301,7 +280,6 @@ async function initWorkspaceGroup(workspaceId) {
         return;
     await ensureWorkspaceGroup(workspace, windowId);
 }
-// Move a specific tab to the given workspace (used internally if needed)
 async function moveTabToWorkspace(tabId, workspaceId) {
     const workspace = await getWorkspaceById(workspaceId);
     if (!workspace)
@@ -318,7 +296,6 @@ async function ungroupWorkspaceTabs(workspaceId) {
     if (!workspace)
         return;
     const title = getWorkspaceGroupTitle(workspace);
-    // query all groups in all windows
     const groups = await queryTabGroups({});
     const targetGroups = groups.filter((g) => g.title === title);
     if (!targetGroups.length)
@@ -355,7 +332,6 @@ async function syncActiveWorkspaceFromTab(activeInfo) {
         await setState({ activeWorkspaceId: workspace.id });
     }
 }
-// Whenever user switches tab (or tab group), update last-used workspace
 chrome.tabs.onActivated.addListener((activeInfo) => {
     void syncActiveWorkspaceFromTab(activeInfo);
 });
@@ -385,7 +361,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             console.error("ACTIVATE_WORKSPACE error", err);
             sendResponse({ ok: false, error: String(err) });
         });
-        return true; // async response
+        return true;
     }
     if (msg.type === "UNGROUP_WORKSPACE_TABS") {
         void ungroupWorkspaceTabs(msg.workspaceId)
@@ -394,7 +370,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             console.error("UNGROUP_WORKSPACE_TABS error", err);
             sendResponse({ ok: false, error: String(err) });
         });
-        return true; // async response
+        return true;
     }
     if (msg.type === "INIT_WORKSPACE_GROUP") {
         void initWorkspaceGroup(msg.workspaceId)
@@ -403,7 +379,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             console.error("INIT_WORKSPACE_GROUP error", err);
             sendResponse({ ok: false, error: String(err) });
         });
-        return true; // async response
+        return true;
     }
     return false;
 });

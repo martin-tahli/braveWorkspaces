@@ -26,7 +26,6 @@ const COLOR_PRESETS: string[] = [
 ];
 
 
-// ~50 emoji icons
 const ICON_PRESETS: string[] = [
   "💼",
   "🎮",
@@ -132,7 +131,6 @@ function updateSelectedSwatch() {
     const bg = sw.style.backgroundColor;
     sw.classList.remove("selected");
   });
-  // simpler: re-render
   setupColorPresets();
 }
 
@@ -141,7 +139,7 @@ function setupIconSelect() {
   ICON_PRESETS.forEach((icon, idx) => {
     const option = document.createElement("option");
     option.value = icon;
-    option.textContent = `${icon}  #${idx + 1}`;
+    option.textContent = `${icon}`;
     iconSelect.appendChild(option);
   });
 }

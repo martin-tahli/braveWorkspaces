@@ -4,7 +4,6 @@ const DEFAULT_STATE = {
 };
 export function getState() {
     return new Promise((resolve) => {
-        // get everything, then merge with defaults
         chrome.storage.sync.get(null, (data) => {
             const partial = data;
             const merged = {
@@ -22,7 +21,6 @@ export function setState(partial) {
             ...current,
             ...partial
         };
-        // Cast via unknown to satisfy TS (storage wants an index-signature object)
         const toSave = next;
         chrome.storage.sync.set(toSave, () => resolve());
     });
