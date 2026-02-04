@@ -84,6 +84,7 @@ let iconSelect: HTMLSelectElement;
 let colorPresetsContainer: HTMLDivElement;
 let wsList: HTMLDivElement;
 let submitBtn: HTMLButtonElement;
+let formErrorEl: HTMLDivElement;
 
 let editingWorkspaceId: string | null = null;
 let selectedColor: string = COLOR_PRESETS[0];
@@ -96,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ) as HTMLDivElement;
   wsList = document.getElementById("wsList") as HTMLDivElement;
   submitBtn = document.getElementById("addWs") as HTMLButtonElement;
+  formErrorEl = document.getElementById("formError") as HTMLDivElement;
 
   setupColorPresets();
   setupIconSelect();
@@ -144,16 +146,46 @@ function setupIconSelect() {
   });
 }
 
+function clearFormError() {
+  formErrorEl.textContent = "";
+}
+
+function setFormError(message: string) {
+  formErrorEl.textContent = message;
+}
+
+function normalizedWorkspaceName(name: string): string {
+  return name.trim().toLocaleLowerCase();
+}
+
+function isDuplicateWorkspaceDisplayKey(
+  workspaces: Workspace[],
+  name: string,
+  icon: string,
+  ignoreWorkspaceId: string | null = null
+): boolean {
+  const normalizedName = normalizedWorkspaceName(name);
+  return workspaces.some((workspace) => {
+    if (ignoreWorkspaceId && workspace.id === ignoreWorkspaceId) return false;
+    return (
+      normalizedWorkspaceName(workspace.name) === normalizedName &&
+      workspace.icon === icon
+    );
+  });
+}
+
 function setFormModeCreate() {
   editingWorkspaceId = null;
   submitBtn.textContent = "Create";
   submitBtn.title = "Create new workspace";
+  clearFormError();
 }
 
 function setFormModeEdit(workspace: Workspace) {
   editingWorkspaceId = workspace.id;
   submitBtn.textContent = "Save";
   submitBtn.title = "Save changes to workspace";
+  clearFormError();
 
   wsNameInput.value = workspace.name;
   selectedColor = workspace.color;
@@ -173,6 +205,7 @@ function resetForm() {
   iconSelect.value = ICON_PRESETS[0];
   setFormModeCreate();
   setupColorPresets();
+  clearFormError();
 }
 
 function setupSubmitButton() {
@@ -186,6 +219,14 @@ function setupSubmitButton() {
     if (e.key === "Enter") {
       void onSubmitWorkspace();
     }
+  });
+
+  wsNameInput.addEventListener("input", () => {
+    clearFormError();
+  });
+
+  iconSelect.addEventListener("change", () => {
+    clearFormError();
   });
 }
 
@@ -273,6 +314,11 @@ async function onAddWorkspace() {
   const icon = iconSelect.value || ICON_PRESETS[0];
 
   const state = await getState();
+  if (isDuplicateWorkspaceDisplayKey(state.workspaces, name, icon)) {
+    setFormError("Workspace with the same icon and name already exists.");
+    return;
+  }
+
   const workspace: Workspace = {
     id: `ws-${Date.now()}`,
     name,
@@ -302,6 +348,18 @@ async function onSaveWorkspaceEdit() {
   const icon = iconSelect.value || ICON_PRESETS[0];
 
   const state = await getState();
+  if (
+    isDuplicateWorkspaceDisplayKey(
+      state.workspaces,
+      name,
+      icon,
+      editingWorkspaceId
+    )
+  ) {
+    setFormError("Workspace with the same icon and name already exists.");
+    return;
+  }
+
   const idx = state.workspaces.findIndex((w) => w.id === editingWorkspaceId);
   if (idx === -1) {
     resetForm();
@@ -416,7 +474,7 @@ async function renderWorkspaces() {
 }
 
 async function onUseWorkspace(workspaceId: string) {
-  await activateWorkspace(workspaceId, true);
+  await activateWorkspace(workspaceId, false);
   await renderWorkspaces();
 }
 
