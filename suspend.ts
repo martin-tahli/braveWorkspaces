@@ -72,3 +72,16 @@ export async function handleSuspendAlarm(alarmName: string): Promise<void> {
     }
   }
 }
+
+// Re-sync alarms after settings or workspace-list changes: clears every
+// workspace's pending alarm and starts countdowns for the inactive ones
+// (scheduleSuspend itself no-ops when suspension is disabled).
+export async function rescheduleAllSuspends(): Promise<void> {
+  const state = await getState();
+  for (const workspace of state.workspaces) {
+    await cancelSuspend(workspace.id);
+    if (state.activeWorkspaceId !== workspace.id) {
+      await scheduleSuspend(workspace.id);
+    }
+  }
+}
