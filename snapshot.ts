@@ -28,7 +28,10 @@ export function isRestoring(): boolean {
 }
 
 export async function ensureHeartbeat(): Promise<void> {
-  await chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 5 });
+  const existing = await chrome.alarms.get(HEARTBEAT_ALARM);
+  if (!existing) {
+    await chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 5 });
+  }
 }
 
 export function isHeartbeatAlarm(alarmName: string): boolean {
@@ -106,12 +109,12 @@ export async function restoreFromBackup(): Promise<void> {
   const snapshot = await readSnapshot();
   if (!snapshot || !snapshot.tabs.length) return;
 
-  const win = await getMainWindow();
-  if (win?.id == null) return;
-  const windowId = win.id;
-
   restoring = true;
   try {
+    const win = await getMainWindow();
+    if (win?.id == null) return;
+    const windowId = win.id;
+
     const state = await getState();
     const tabIdsByWorkspace = new Map<string | null, number[]>();
 
