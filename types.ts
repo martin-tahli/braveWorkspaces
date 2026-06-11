@@ -59,6 +59,9 @@ export interface WorkspaceSwitch {
   workspaceId: string;
 }
 
+export type WorkspaceGroupMap = Record<string, number>;
+export type WorkspaceTabMap = Record<string, number>;
+
 export type BackgroundMessage =
   | { type: "ACTIVATE_WORKSPACE"; workspaceId: string }
   | { type: "MOVE_TAB_TO_WORKSPACE"; tabId: number; workspaceId: string }

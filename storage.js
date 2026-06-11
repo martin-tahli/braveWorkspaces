@@ -12,6 +12,8 @@ export async function getState() {
         settings: { ...DEFAULT_SETTINGS, ...(partial.settings ?? {}) }
     };
 }
+// Note: chrome.storage.local.set merges at the top level only — nested objects
+// like `settings` must always be passed whole, never partially.
 export async function setState(partial) {
     await chrome.storage.local.set(partial);
 }

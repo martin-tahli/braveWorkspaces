@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type ExtensionState, type Settings } from "./types.js";
+import { DEFAULT_SETTINGS, type ExtensionState, type Settings, type WorkspaceGroupMap, type WorkspaceTabMap } from "./types.js";
 
 export async function getState(): Promise<ExtensionState> {
   const data = await chrome.storage.local.get([
@@ -15,6 +15,8 @@ export async function getState(): Promise<ExtensionState> {
   };
 }
 
+// Note: chrome.storage.local.set merges at the top level only — nested objects
+// like `settings` must always be passed whole, never partially.
 export async function setState(partial: Partial<ExtensionState>): Promise<void> {
   await chrome.storage.local.set(partial as Record<string, unknown>);
 }
@@ -30,9 +32,6 @@ export async function getSettings(): Promise<Settings> {
 
 const GROUP_MAP_KEY = "workspaceGroupMap";
 const LAST_ACTIVE_TAB_KEY = "workspaceLastActiveTab";
-
-export type WorkspaceGroupMap = Record<string, number>;
-export type WorkspaceTabMap = Record<string, number>;
 
 export async function getGroupMap(): Promise<WorkspaceGroupMap> {
   const data = await chrome.storage.session.get([GROUP_MAP_KEY]);
