@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Brave Workspaces",
-  "description": "Opera GX-like workspaces for Brave using tab groups.",
-  "version": "0.1.0",
+  "description": "Opera-like workspaces for Brave using tab groups, with memory suspension for inactive workspaces.",
+  "version": "0.2.0",
   "action": {
     "default_popup": "popup.html"
   },
@@ -12,11 +12,30 @@
   },
   "permissions": [
     "tabs",
-    "windows",
     "tabGroups",
-    "storage"
+    "storage",
+    "alarms",
+    "contextMenus"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ]
+  "commands": {
+    "switch-workspace-1": {
+      "suggested_key": { "default": "Ctrl+Shift+1" },
+      "description": "Switch to workspace 1"
+    },
+    "switch-workspace-2": {
+      "suggested_key": { "default": "Ctrl+Shift+2" },
+      "description": "Switch to workspace 2"
+    },
+    "switch-workspace-3": {
+      "suggested_key": { "default": "Ctrl+Shift+3" },
+      "description": "Switch to workspace 3"
+    },
+    "switch-workspace-4": {
+      "suggested_key": { "default": "Ctrl+Shift+4" },
+      "description": "Switch to workspace 4"
+    },
+    "next-workspace": {
+      "description": "Switch to next workspace"
+    }
+  }
 }
