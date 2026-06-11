@@ -1,80 +1,53 @@
-import type { ExtensionState } from "./types";
+import { DEFAULT_SETTINGS, type ExtensionState, type Settings } from "./types.js";
 
-const DEFAULT_STATE: ExtensionState = {
-  workspaces: [],
-  activeWorkspaceId: null
-};
-
-const STATE_KEYS: Array<keyof ExtensionState> = ["workspaces", "activeWorkspaceId"];
-
-let migrationPromise: Promise<void> | null = null;
-
-function hasValueForState(value: Partial<ExtensionState>): boolean {
-  return (
-    Array.isArray(value.workspaces) ||
-    typeof value.activeWorkspaceId === "string" ||
-    value.activeWorkspaceId === null
-  );
+export async function getState(): Promise<ExtensionState> {
+  const data = await chrome.storage.local.get([
+    "workspaces",
+    "activeWorkspaceId",
+    "settings"
+  ]);
+  const partial = data as Partial<ExtensionState>;
+  return {
+    workspaces: Array.isArray(partial.workspaces) ? partial.workspaces : [],
+    activeWorkspaceId:
+      typeof partial.activeWorkspaceId === "string" ? partial.activeWorkspaceId : null,
+    settings: { ...DEFAULT_SETTINGS, ...(partial.settings ?? {}) }
+  };
 }
 
-function migrateSyncStateToLocalOnce(): Promise<void> {
-  if (migrationPromise) return migrationPromise;
-
-  migrationPromise = new Promise((resolve) => {
-    chrome.storage.local.get(STATE_KEYS, (localData) => {
-      const localState = localData as Partial<ExtensionState>;
-      if (hasValueForState(localState)) {
-        resolve();
-        return;
-      }
-
-      chrome.storage.sync.get(STATE_KEYS, (syncData) => {
-        const syncState = syncData as Partial<ExtensionState>;
-        if (!hasValueForState(syncState)) {
-          resolve();
-          return;
-        }
-
-        const toCopy: Partial<ExtensionState> = {};
-        if (Array.isArray(syncState.workspaces)) {
-          toCopy.workspaces = syncState.workspaces;
-        }
-        if (
-          typeof syncState.activeWorkspaceId === "string" ||
-          syncState.activeWorkspaceId === null
-        ) {
-          toCopy.activeWorkspaceId = syncState.activeWorkspaceId;
-        }
-
-        const payload = toCopy as unknown as { [key: string]: unknown };
-        chrome.storage.local.set(payload, () => resolve());
-      });
-    });
-  });
-
-  return migrationPromise;
+export async function setState(partial: Partial<ExtensionState>): Promise<void> {
+  await chrome.storage.local.set(partial as Record<string, unknown>);
 }
 
-export function getState(): Promise<ExtensionState> {
-  return new Promise((resolve) => {
-    void migrateSyncStateToLocalOnce().then(() => {
-      chrome.storage.local.get(STATE_KEYS, (data) => {
-        const partial = data as Partial<ExtensionState>;
-        const merged: ExtensionState = {
-          ...DEFAULT_STATE,
-          ...partial
-        };
-        resolve(merged);
-      });
-    });
-  });
+export async function getSettings(): Promise<Settings> {
+  return (await getState()).settings;
 }
 
-export function setState(partial: Partial<ExtensionState>): Promise<void> {
-  return new Promise((resolve) => {
-    void migrateSyncStateToLocalOnce().then(() => {
-      const toSave = partial as unknown as { [key: string]: unknown };
-      chrome.storage.local.set(toSave, () => resolve());
-    });
-  });
+// ---------- session-scoped runtime maps ----------
+// Group IDs are only valid for the lifetime of the browser session, so the
+// workspace→group mapping lives in storage.session (it also survives
+// service-worker restarts, which module-level variables do not).
+
+const GROUP_MAP_KEY = "workspaceGroupMap";
+const LAST_ACTIVE_TAB_KEY = "workspaceLastActiveTab";
+
+export type WorkspaceGroupMap = Record<string, number>;
+export type WorkspaceTabMap = Record<string, number>;
+
+export async function getGroupMap(): Promise<WorkspaceGroupMap> {
+  const data = await chrome.storage.session.get([GROUP_MAP_KEY]);
+  return (data[GROUP_MAP_KEY] as WorkspaceGroupMap | undefined) ?? {};
+}
+
+export async function setGroupMap(map: WorkspaceGroupMap): Promise<void> {
+  await chrome.storage.session.set({ [GROUP_MAP_KEY]: map });
+}
+
+export async function getLastActiveTabMap(): Promise<WorkspaceTabMap> {
+  const data = await chrome.storage.session.get([LAST_ACTIVE_TAB_KEY]);
+  return (data[LAST_ACTIVE_TAB_KEY] as WorkspaceTabMap | undefined) ?? {};
+}
+
+export async function setLastActiveTabMap(map: WorkspaceTabMap): Promise<void> {
+  await chrome.storage.session.set({ [LAST_ACTIVE_TAB_KEY]: map });
 }
