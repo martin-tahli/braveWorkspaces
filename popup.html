@@ -9,7 +9,51 @@
     <div id="popup-root">
       <header class="header">
         <h1>Workspaces</h1>
+        <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
       </header>
+
+      <div id="restoreHint" class="restore-hint hidden"></div>
+
+      <section id="searchSection" class="search-section">
+        <input id="searchInput" type="text" placeholder="Search tabs in all workspaces…" />
+        <div id="searchResults" class="search-results"></div>
+      </section>
+
+      <section id="settingsPanel" class="settings-panel hidden">
+        <h2 class="section-title">Settings</h2>
+        <label class="setting-row">
+          <input type="checkbox" id="setSuspendEnabled" />
+          <span>Suspend inactive workspaces (free memory)</span>
+        </label>
+        <div class="setting-row setting-indent">
+          <span>after</span>
+          <input type="number" id="setSuspendDelay" min="1" max="240" />
+          <span>minutes of inactivity</span>
+        </div>
+        <label class="setting-row">
+          <input type="checkbox" id="setShortcutsEnabled" />
+          <span>Keyboard shortcuts</span>
+        </label>
+        <label class="setting-row">
+          <input type="checkbox" id="setContextMenuEnabled" />
+          <span>"Move tab to workspace" right-click menu</span>
+        </label>
+        <label class="setting-row">
+          <input type="checkbox" id="setSearchEnabled" />
+          <span>Tab search</span>
+        </label>
+        <label class="setting-row">
+          <input type="checkbox" id="setMemoryIndicatorEnabled" />
+          <span>Memory indicator</span>
+        </label>
+        <div class="setting-row">
+          <button id="restoreBtn" class="primary-btn">Restore from backup</button>
+          <span id="snapshotAge" class="snapshot-age"></span>
+        </div>
+        <div class="setting-row shortcut-note">
+          Remap shortcuts at brave://extensions/shortcuts
+        </div>
+      </section>
 
       <section class="form-section">
         <div class="field">

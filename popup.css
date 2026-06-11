@@ -210,3 +210,131 @@ select {
 .ws-actions button:hover {
   background: #1f2937;
 }
+
+/* ---------- v2 additions ---------- */
+
+.hidden {
+  display: none !important;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+
+.search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-section input {
+  width: 100%;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid #111827;
+}
+
+.search-result:hover {
+  background: #111827;
+}
+
+.search-result img {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.search-result span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #1f2933;
+  border-radius: 4px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.setting-indent {
+  padding-left: 20px;
+  color: #9ca3af;
+}
+
+.setting-row input[type="number"] {
+  width: 56px;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+.snapshot-age {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.shortcut-note {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.restore-hint {
+  font-size: 11px;
+  color: #fbbf24;
+  border: 1px solid #b45309;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.ws-meta {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-left: 4px;
+}
