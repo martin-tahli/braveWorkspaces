@@ -1,4 +1,4 @@
 node_modules
 .env*
-claude-zai.sh
+!.env.claude-providers.example
 bash.exe.stackdump
