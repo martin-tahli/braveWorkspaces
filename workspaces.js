@@ -153,21 +153,39 @@ export async function linkGroupsOnStartup() {
     await setGroupMap(map);
 }
 // ---------- core actions ----------
-export async function addTabToWorkspace(tabId, windowId, workspace) {
-    const existingGroupId = await getGroupIdForWorkspace(workspace.id);
-    if (existingGroupId != null) {
-        await groupTabs({ groupId: existingGroupId, tabIds: [tabId] });
-        return;
+// Serializes group creation/assignment per workspace so two rapid
+// tabs.onCreated events can't both see "no group yet" and create duplicates.
+const pendingByWorkspace = new Map();
+async function withWorkspaceLock(workspaceId, fn) {
+    const previous = pendingByWorkspace.get(workspaceId) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(fn);
+    pendingByWorkspace.set(workspaceId, current);
+    try {
+        await current;
     }
-    const newGroupId = await groupTabs({ tabIds: [tabId], createProperties: { windowId } });
-    if (newGroupId == null)
-        return;
-    await updateTabGroup(newGroupId, {
-        title: getWorkspaceGroupTitle(workspace),
-        color: mapHexToGroupColor(workspace.color),
-        collapsed: false
+    finally {
+        if (pendingByWorkspace.get(workspaceId) === current) {
+            pendingByWorkspace.delete(workspaceId);
+        }
+    }
+}
+export async function addTabToWorkspace(tabId, windowId, workspace) {
+    await withWorkspaceLock(workspace.id, async () => {
+        const existingGroupId = await getGroupIdForWorkspace(workspace.id);
+        if (existingGroupId != null) {
+            await groupTabs({ groupId: existingGroupId, tabIds: [tabId] });
+            return;
+        }
+        const newGroupId = await groupTabs({ tabIds: [tabId], createProperties: { windowId } });
+        if (newGroupId == null)
+            return;
+        await updateTabGroup(newGroupId, {
+            title: getWorkspaceGroupTitle(workspace),
+            color: mapHexToGroupColor(workspace.color),
+            collapsed: false
+        });
+        await registerGroup(workspace.id, newGroupId);
     });
-    await registerGroup(workspace.id, newGroupId);
 }
 export async function collapseOtherWorkspaceGroups(activeWorkspaceId) {
     const map = await getGroupMap();
@@ -221,6 +239,7 @@ export async function syncActiveWorkspaceFromTab(tabId) {
     if (state.activeWorkspaceId === workspaceId)
         return null;
     await setState({ activeWorkspaceId: workspaceId });
+    await updateTabGroup(tab.groupId, { collapsed: false });
     await collapseOtherWorkspaceGroups(workspaceId);
     return { previousWorkspaceId: state.activeWorkspaceId, workspaceId };
 }
@@ -301,6 +320,9 @@ export async function focusTab(tabId) {
             await updateTabGroup(tab.groupId, { collapsed: false });
             await collapseOtherWorkspaceGroups(workspaceId);
             await setState({ activeWorkspaceId: workspaceId });
+            const lastActiveMap = await getLastActiveTabMap();
+            lastActiveMap[workspaceId] = tab.id;
+            await setLastActiveTabMap(lastActiveMap);
             switchedTo = workspaceId;
         }
     }
