@@ -1,11 +1,20 @@
 import type { WorkspaceSwitch } from "./types.js";
 import { getState, getSettings } from "./storage.js";
-import { activateWorkspace, moveTabToWorkspace } from "./workspaces.js";
+import { activateWorkspace, moveTabToWorkspace, getWorkspaceGroupTitle } from "./workspaces.js";
 
 const MENU_ROOT_ID = "move-tab-root";
 const MENU_ITEM_PREFIX = "move-tab-to:";
 
-export async function rebuildContextMenu(): Promise<void> {
+// Serializes rebuilds so an overlapping call can't interleave its removeAll
+// with another call's create()s.
+let menuRebuildChain: Promise<void> = Promise.resolve();
+
+export function rebuildContextMenu(): Promise<void> {
+  menuRebuildChain = menuRebuildChain.catch(() => undefined).then(doRebuildContextMenu);
+  return menuRebuildChain;
+}
+
+async function doRebuildContextMenu(): Promise<void> {
   await chrome.contextMenus.removeAll();
 
   const settings = await getSettings();
@@ -14,19 +23,25 @@ export async function rebuildContextMenu(): Promise<void> {
   const state = await getState();
   if (!state.workspaces.length) return;
 
-  chrome.contextMenus.create({
-    id: MENU_ROOT_ID,
-    title: "Move tab to workspace",
-    contexts: ["page"]
-  });
+  chrome.contextMenus.create(
+    {
+      id: MENU_ROOT_ID,
+      title: "Move tab to workspace",
+      contexts: ["page"]
+    },
+    () => void chrome.runtime.lastError
+  );
 
   for (const workspace of state.workspaces) {
-    chrome.contextMenus.create({
-      id: MENU_ITEM_PREFIX + workspace.id,
-      parentId: MENU_ROOT_ID,
-      title: `${workspace.icon} ${workspace.name}`,
-      contexts: ["page"]
-    });
+    chrome.contextMenus.create(
+      {
+        id: MENU_ITEM_PREFIX + workspace.id,
+        parentId: MENU_ROOT_ID,
+        title: getWorkspaceGroupTitle(workspace),
+        contexts: ["page"]
+      },
+      () => void chrome.runtime.lastError
+    );
   }
 }
 
@@ -52,7 +67,7 @@ export async function handleCommand(command: string): Promise<WorkspaceSwitch | 
   if (!state.workspaces.length) return null;
 
   let targetId: string | null = null;
-  const numbered = /^switch-workspace-(\d)$/.exec(command);
+  const numbered = /^switch-workspace-([1-4])$/.exec(command);
   if (numbered) {
     const index = parseInt(numbered[1], 10) - 1;
     targetId = state.workspaces[index]?.id ?? null;
